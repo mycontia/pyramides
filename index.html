@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Jeux de Maths</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 30px; background: #f9f9f9; }
+    h1 { color: #333; }
+    .game { margin: 40px auto; padding: 20px; background: white; border-radius: 12px; max-width: 600px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    button { padding: 8px 16px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; background: #4CAF50; color: white; font-size: 16px; }
+    input { padding: 6px; margin: 5px; width: 50px; text-align: center; }
+    table { margin: 0 auto; border-collapse: collapse; }
+    td { width: 50px; height: 50px; text-align: center; font-size: 18px; }
+    .correct { background: #c8e6c9; }
+    .wrong { background: #ffcdd2; }
+  </style>
+</head>
+<body>
+  <h1>🎲 Jeux de Maths</h1>
+
+  <!-- Compte est bon -->
+  <div class="game" id="compte">
+    <h2>🔢 Le Compte est Bon</h2>
+    <p>Utilise <b>les 4 nombres</b> et les opérations (+ − × ÷ ^) pour atteindre l’objectif (≥30) !</p>
+    <p><b>Nombres :</b> <span id="numbers"></span></p>
+    <p><b>Objectif :</b> <span id="target"></span></p>
+    <input type="text" id="userCalc" placeholder="Ton calcul">
+    <button onclick="checkCompte()">Vérifier</button>
+    <p id="compteResult"></p>
+    <button onclick="newCompte()">Nouveau défi</button>
+  </div>
+
+  <!-- Pyramides -->
+  <div class="game" id="pyramide">
+    <h2>🏗️ Pyramides de Nombres</h2>
+    <p>Complète les pyramides, certaines cases sont visibles pour aider.</p>
+    <div id="pyramidAdd"></div>
+    <div id="pyramidMul"></div>
+    <button onclick="newPyramids()">Nouvelles pyramides</button>
+  </div>
+
+  <script>
+    // --- Compte est Bon ---
+    let currentNumbers = [];
+    let currentTarget = 0;
+
+    function newCompte() {
+      const ops = ['+','-','*','**'];
+      do {
+        currentNumbers = Array.from({length:4}, () => Math.floor(Math.random()*9)+1);
+        // Générer un résultat en utilisant tous les 4 nombres
+        let expr = `(((${currentNumbers[0]}${ops[Math.floor(Math.random()*ops.length)]}${currentNumbers[1]})${ops[Math.floor(Math.random()*ops.length)]}${currentNumbers[2]})${ops[Math.floor(Math.random()*ops.length)]}${currentNumbers[3]})`;
+        try {
+          currentTarget = eval(expr);
+        } catch(e){ currentTarget=0; }
+      } while(currentTarget <=30 || currentTarget>200 || isNaN(currentTarget) || !isFinite(currentTarget));
+
+      document.getElementById("numbers").innerText = currentNumbers.join(" , ");
+      document.getElementById("target").innerText = currentTarget;
+      document.getElementById("userCalc").value = '';
+      document.getElementById("compteResult").innerText = '';
+    }
+
+    function checkCompte() {
+      try {
+        let userVal = eval(document.getElementById("userCalc").value);
+        if(userVal === currentTarget){
+          document.getElementById("compteResult").innerText = "✅ Correct !";
+        } else {
+          document.getElementById("compteResult").innerText = `❌ Incorrect, résultat = ${userVal}`;
+        }
+      } catch(e) {
+        document.getElementById("compteResult").innerText = '❌ Expression invalide';
+      }
+    }
+
+    newCompte();
+
+    // --- Pyramides ---
+    function generateFullPyramid(levels, mode){
+      let base = Array.from({length: levels}, () => Math.floor(Math.random()*9)+1);
+      let rows = [base];
+      for(let i=levels-1;i>0;i--){
+        let prev = rows[0];
+        let next = [];
+        for(let j=0;j<i;j++){
+          next.push(mode==='sum'? prev[j]+prev[j+1]: prev[j]*prev[j+1]);
+        }
+        rows.unshift(next);
+      }
+      return rows;
+    }
+
+    function renderPartialPyramid(id, pyramid, mode){
+      let html = `<p><b>Type:</b> ${mode==='sum'?'Additive':'Multiplicative'}</p>`;
+      html += '<table>';
+      let levels = pyramid.length;
+      for(let i=0;i<levels;i++){
+        html += '<tr>';
+        let padding = levels-i-1;
+        for(let p=0;p<padding;p++) html += '<td></td>';
+        for(let j=0;j<pyramid[i].length;j++){
+          // Montrer aléatoirement certaines cases comme indices
+          if(i===levels-1 || Math.random()<0.4){
+            html += `<td>${pyramid[i][j]}</td>`;
+          } else {
+            html += `<td><input data-val="${pyramid[i][j]}"></td>`;
+          }
+        }
+        html += '</tr>';
+      }
+      html += '</table>';
+      html += `<button onclick="checkPyramid('${id}')">Vérifier</button>`;
+      document.getElementById(id).innerHTML = html;
+    }
+
+    function checkPyramid(id){
+      let inputs = document.getElementById(id).getElementsByTagName('input');
+      for(let inp of inputs){
+        let val = parseInt(inp.value);
+        let correct = parseInt(inp.dataset.val);
+        if(val === correct){
+          inp.className = 'correct';
+        } else {
+          inp.className = 'wrong';
+        }
+      }
+    }
+
+    function newPyramids(){
+      let addPyr = generateFullPyramid(4,'sum');
+      let mulPyr = generateFullPyramid(4,'prod');
+      renderPartialPyramid('pyramidAdd', addPyr, 'sum');
+      renderPartialPyramid('pyramidMul', mulPyr, 'prod');
+    }
+
+    newPyramids();
+  </script>
+</body>
+</html>
